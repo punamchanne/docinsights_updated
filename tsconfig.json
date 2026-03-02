@@ -2,7 +2,8 @@
   "include": [
     "client/src/**/*",
     "shared/**/*",
-    "server/**/*"
+    "server/**/*",
+    "scripts/**/*"
   ],
   "exclude": [
     "node_modules",
@@ -20,6 +21,9 @@
       "esnext",
       "dom",
       "dom.iterable"
+    ],
+    "types": [
+      "node"
     ],
     "jsx": "preserve",
     "esModuleInterop": true,

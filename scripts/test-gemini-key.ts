@@ -16,7 +16,7 @@ const MODELS_TO_TEST = [
 ];
 
 async function testGeneration() {
-    const genAI = new GoogleGenerativeAI(API_KEY);
+    const genAI = new GoogleGenerativeAI(API_KEY!);
 
     for (const modelName of MODELS_TO_TEST) {
         console.log(`\nTesting model: ${modelName}...`);

@@ -60,7 +60,7 @@ export async function generateChatResponse(
     throw new Error("Gemini AI is not configured");
   }
 
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
   const formattedHistory: Content[] = chatHistory.map(msg => ({
     role: msg.role === 'assistant' ? 'model' : 'user',
@@ -118,7 +118,7 @@ export async function generateDocumentSummary(text: string): Promise<string> {
     throw new Error("Gemini AI is not configured");
   }
 
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
   const prompt = `Summarize the following text, focusing on the main points and key takeaways.:\n\n${text.slice(0, 12000)}`;
 
   const result = await model.generateContent(prompt);
@@ -131,7 +131,7 @@ export async function extractKeywords(text: string): Promise<string[]> {
     throw new Error("Gemini AI is not configured");
   }
 
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
   const prompt = `Extract the 8-12 most important keywords or key phrases from the following text. Return them as a comma-separated list:\n\n${text.slice(0, 12000)}`;
 
   const result = await model.generateContent(prompt);

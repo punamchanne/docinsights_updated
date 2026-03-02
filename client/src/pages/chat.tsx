@@ -66,8 +66,8 @@ const ChatMessageContent = ({ content }: { content: string }) => {
           </h4>
           <div className="grid gap-3">
             {sources.map((source) => (
-              <div key={source.number} className="flex items-start gap-3 p-3 rounded-lg bg-background/40 border border-primary/10 hover:border-primary/30 transition-colors">
-                <div className="w-5 h-5 flex-shrink-0 text-[10px] flex items-center justify-center rounded-full bg-primary/20 text-primary font-bold shadow-[0_0_8px_rgba(124,58,237,0.2)]">
+              <div key={source.number} className="flex items-start gap-3 p-3 rounded-lg bg-card border border-border hover:border-primary/30 transition-colors">
+                <div className="w-5 h-5 flex-shrink-0 text-[10px] flex items-center justify-center rounded-full bg-primary/10 text-primary font-bold">
                   {source.number}
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
@@ -159,8 +159,8 @@ export default function Chat() {
     return (
       <div className="flex-1 flex items-center justify-center h-[calc(100vh-4rem)]">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-10 h-10 animate-spin text-primary drop-shadow-[0_0_15px_rgba(124,58,237,0.5)]" />
-          <p className="text-muted-foreground animate-pulse">Loading document context...</p>
+          <Loader2 className="w-10 h-10 animate-spin text-primary" />
+          <p className="text-muted-foreground">Loading document context...</p>
         </div>
       </div>
     );
@@ -169,14 +169,14 @@ export default function Chat() {
   if (!document) {
     return (
       <div className="h-[calc(100vh-4rem)] flex items-center justify-center">
-        <div className="text-center p-8 glass-card rounded-2xl max-w-md mx-6">
-          <div className="w-16 h-16 rounded-2xl bg-muted/30 flex items-center justify-center mx-auto mb-6 border border-border shadow-[0_0_15px_rgba(0,0,0,0.1)]">
+        <div className="text-center p-8 bg-card border rounded-2xl max-w-md mx-6 shadow-sm">
+          <div className="w-16 h-16 rounded-2xl bg-muted/30 flex items-center justify-center mx-auto mb-6 border border-border">
             <FileText className="w-8 h-8 text-muted-foreground" />
           </div>
           <h3 className="text-xl font-bold mb-2">Document not found</h3>
           <p className="text-muted-foreground mb-6">We couldn't find the document you're looking for.</p>
           <Link href="/documents">
-            <Button variant="outline" className="border-primary/20 hover:bg-primary/10 hover:text-primary">
+            <Button variant="outline" className="border-primary/20 hover:bg-muted">
               Back to Documents
             </Button>
           </Link>
@@ -186,25 +186,22 @@ export default function Chat() {
   }
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex gap-6 animate-in fade-in duration-500">
-      {/* Decorative Background */}
-      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-primary/5 via-background to-background pointer-events-none -z-10" />
-
-      <Card className="flex-1 flex flex-col glass-card border-primary/10 overflow-hidden shadow-2xl">
-        <CardHeader className="flex-shrink-0 border-b border-border/40 bg-background/20 backdrop-blur-md py-4">
+    <div className="h-[calc(100vh-8rem)] flex gap-6">
+      <Card className="flex-1 flex flex-col border overflow-hidden shadow-lg">
+        <CardHeader className="flex-shrink-0 border-b bg-muted/30 py-4">
           <div className="flex items-center gap-4">
             <Link href="/documents">
               <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-primary/10 hover:text-primary rounded-full">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
             </Link>
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 border border-primary/10 shadow-[0_0_10px_rgba(124,58,237,0.1)]">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 border border-primary/10">
               <MessageSquare className="w-5 h-5 text-primary" />
             </div>
             <div className="min-w-0">
               <CardTitle className="text-base font-semibold truncate flex items-center gap-2">
                 <span className="text-muted-foreground font-normal">Chat with:</span>
-                <span className="text-primary text-glow">{document.originalName}</span>
+                <span className="text-primary">{document.originalName}</span>
               </CardTitle>
             </div>
           </div>
@@ -247,8 +244,8 @@ export default function Chat() {
                     <div className={`
                       max-w-[85%] rounded-2xl p-5 shadow-sm
                       ${msg.role === "user"
-                        ? "bg-primary text-primary-foreground ml-auto rounded-tr-sm shadow-[0_4px_20px_rgba(124,58,237,0.2)]"
-                        : "bg-background/60 backdrop-blur-sm border border-border/50 rounded-tl-sm"
+                        ? "bg-primary text-primary-foreground ml-auto rounded-tr-sm"
+                        : "bg-muted/50 border rounded-tl-sm"
                       }
                     `}>
                       {msg.role === "assistant" ? (
@@ -270,7 +267,7 @@ export default function Chat() {
                     <div className="w-10 h-10 rounded-full bg-background border border-primary/20 flex items-center justify-center flex-shrink-0 shadow-lg text-primary">
                       <Bot className="w-5 h-5" />
                     </div>
-                    <div className="bg-background/60 backdrop-blur-sm border border-border/50 rounded-2xl rounded-tl-sm p-5 flex items-center gap-3">
+                    <div className="bg-muted/50 border rounded-2xl rounded-tl-sm p-5 flex items-center gap-3">
                       <Loader2 className="w-4 h-4 animate-spin text-primary" />
                       <span className="text-sm text-muted-foreground">Analyzing document...</span>
                     </div>
@@ -280,7 +277,7 @@ export default function Chat() {
               </div>
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-center p-8 max-w-lg mx-auto">
-                <div className="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(124,58,237,0.15)] animate-in zoom-in duration-500">
+                <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
                   <Bot className="w-10 h-10 text-primary" />
                 </div>
                 <h2 className="text-2xl font-bold mb-3 tracking-tight">How can I help you?</h2>
@@ -319,7 +316,7 @@ export default function Chat() {
               <Button
                 onClick={handleSend}
                 disabled={!message.trim() || sendMessageMutation.isPending}
-                className="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 p-0 rounded-lg bg-primary hover:bg-primary/90 shadow-[0_0_15px_rgba(124,58,237,0.3)] transition-all hover:scale-105"
+                className="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 p-0 rounded-lg bg-primary hover:bg-primary/90"
                 data-testid="button-send-message"
               >
                 {sendMessageMutation.isPending ? (
@@ -336,8 +333,8 @@ export default function Chat() {
         </CardContent>
       </Card>
 
-      <Card className="w-80 hidden 2xl:flex flex-col flex-shrink-0 glass-card border-primary/10">
-        <CardHeader className="border-b border-border/40 py-4">
+      <Card className="w-80 hidden 2xl:flex flex-col flex-shrink-0 border shadow-md">
+        <CardHeader className="border-b py-4">
           <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
             <Quote className="w-4 h-4 text-primary" />
             Suggested Questions

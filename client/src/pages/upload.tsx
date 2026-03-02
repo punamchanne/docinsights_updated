@@ -166,46 +166,39 @@ export default function Upload() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-700">
-      {/* Decorative Background */}
-      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-background to-background pointer-events-none -z-10" />
-
+    <div className="max-w-4xl mx-auto space-y-8">
       <div className="text-center">
-        <h1 className="text-4xl font-bold tracking-tight text-glow mb-4" data-testid="text-upload-title">
+        <h1 className="text-4xl font-bold tracking-tight mb-4" data-testid="text-upload-title">
           Upload Documents
         </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+        <p className="text-base text-muted-foreground max-w-2xl mx-auto">
           Upload PDF or Image files to extract text, analyze content, and enable AI-powered Q&A
         </p>
       </div>
 
-      <Card className="glass-card border-primary/20 shadow-2xl overflow-hidden relative group">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
-        <CardContent className="p-8 relative z-10">
+      <Card className="card-flat overflow-hidden relative border-dashed">
+        <CardContent className="p-8">
           <div
             {...getRootProps()}
             className={`
-              relative border-2 border-dashed rounded-2xl p-16 text-center cursor-pointer
-              transition-all duration-300
+              relative border-2 border-dashed rounded-xl p-16 text-center cursor-pointer
+              transition-all duration-200
               ${isDragActive
-                ? "border-primary bg-primary/10 scale-[1.02] shadow-[0_0_30px_rgba(124,58,237,0.2)]"
-                : "border-primary/20 hover:border-primary/50 hover:bg-muted/30"
+                ? "border-primary bg-primary/5"
+                : "border-border hover:border-primary/50 hover:bg-muted/50"
               }
             `}
             data-testid="dropzone"
           >
             <input {...getInputProps()} data-testid="input-file" />
             <div className="max-w-md mx-auto relative">
-              {/* Glow effect behind icon */}
-              <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-primary/20 blur-3xl rounded-full pointer-events-none transition-opacity duration-500 ${isDragActive ? 'opacity-100' : 'opacity-0'}`} />
-
               <div className={`
-                w-24 h-24 rounded-3xl mx-auto mb-8 flex items-center justify-center relative z-10
-                transition-all duration-300
-                ${isDragActive ? "bg-primary text-primary-foreground shadow-lg" : "bg-muted/50 text-muted-foreground group-hover:text-primary group-hover:bg-primary/10"}
+                w-24 h-24 rounded-2xl mx-auto mb-8 flex items-center justify-center relative z-10
+                transition-all duration-200
+                ${isDragActive ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}
               `}>
                 {isDragActive ? (
-                  <Cloud className="w-12 h-12 animate-bounce" />
+                  <Cloud className="w-12 h-12" />
                 ) : (
                   <UploadIcon className="w-10 h-10" />
                 )}
@@ -216,7 +209,7 @@ export default function Upload() {
               <p className="text-muted-foreground mb-8">
                 or click to browse from your computer
               </p>
-              <Button variant={isDragActive ? "secondary" : "default"} size="lg" className="shadow-lg hover:scale-105 transition-transform" type="button">
+              <Button variant={isDragActive ? "secondary" : "default"} size="lg" type="button">
                 Select Files
               </Button>
               <div className="flex items-center justify-center gap-6 mt-8 text-xs text-muted-foreground/60 font-medium">
@@ -230,8 +223,8 @@ export default function Upload() {
       </Card>
 
       {files.length > 0 && (
-        <Card className="glass-card border-primary/10 animate-in slide-in-from-bottom-4 duration-500">
-          <CardHeader className="border-b border-border/40">
+        <Card className="card-flat">
+          <CardHeader className="border-b">
             <CardTitle className="text-lg font-medium flex items-center gap-2">
               <Cloud className="w-5 h-5 text-primary" />
               Upload Queue
@@ -242,10 +235,10 @@ export default function Upload() {
               {files.map((uploadFile, index) => (
                 <div
                   key={index}
-                  className="flex items-center gap-4 p-4 rounded-xl bg-background/40 border border-primary/5 hover:border-primary/20 transition-all shadow-sm group"
+                  className="flex items-center gap-4 p-4 rounded-lg bg-muted/30 border border-transparent hover:border-border transition-all group"
                   data-testid={`upload-item-${index}`}
                 >
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <FileText className="w-6 h-6 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -312,7 +305,7 @@ export default function Upload() {
 
       {/* Password Protection Warning Dialog */}
       <AlertDialog open={showPasswordAlert} onOpenChange={setShowPasswordAlert}>
-        <AlertDialogContent className="glass-card border-destructive/30">
+        <AlertDialogContent className="border shadow-lg">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-red-500">
               <AlertCircle className="h-5 w-5" />

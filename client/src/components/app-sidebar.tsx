@@ -89,13 +89,13 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar className="border-r border-border/40 bg-sidebar/50 backdrop-blur-xl">
-      <SidebarHeader className="h-16 px-6 flex items-center border-b border-border/40">
+    <Sidebar className="border-r border-border bg-sidebar">
+      <SidebarHeader className="h-16 px-6 flex items-center border-b">
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="w-9 h-9 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/20 group-hover:scale-110 transition-transform duration-300">
+          <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20">
             <Zap className="w-5 h-5 text-primary" />
           </div>
-          <span className="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70 group-hover:from-primary group-hover:to-purple-400 transition-all duration-300">DocInsight</span>
+          <span className="font-bold text-lg tracking-tight text-foreground transition-all">DocInsight</span>
         </Link>
       </SidebarHeader>
       <SidebarContent className="px-3 py-4">
@@ -115,8 +115,8 @@ export function AppSidebar() {
                       isActive={isActive}
                       data-testid={`nav-${item.title.toLowerCase()}`}
                       className={`h-10 px-3 rounded-lg transition-all duration-200 ${isActive
-                          ? "bg-primary/15 text-primary shadow-[0_0_10px_rgba(124,58,237,0.1)] font-medium"
-                          : "hover:bg-primary/5 hover:text-primary/80"
+                        ? "bg-primary/10 text-primary font-medium border border-primary/10"
+                        : "hover:bg-muted/50 hover:text-foreground"
                         }`}
                     >
                       <Link href={item.url} className="flex items-center gap-3">
@@ -135,15 +135,15 @@ export function AppSidebar() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
-              className="flex items-center gap-3 w-full p-2.5 rounded-xl hover:bg-primary/5 transition-all group border border-transparent hover:border-primary/10"
+              className="flex items-center gap-3 w-full p-2.5 rounded-xl hover:bg-muted transition-all border border-transparent hover:border-border"
               data-testid="button-user-menu"
             >
-              <Avatar className="h-9 w-9 border-2 border-background shadow-sm group-hover:border-primary/20 transition-colors">
+              <Avatar className="h-9 w-9 border border-border shadow-sm">
                 <AvatarImage
                   src={user?.profileImageUrl || undefined}
                   className="object-cover"
                 />
-                <AvatarFallback className="bg-gradient-to-br from-primary/20 to-purple-500/20 text-primary font-bold">
+                <AvatarFallback className="bg-muted text-foreground font-bold">
                   {getInitials()}
                 </AvatarFallback>
               </Avatar>
@@ -156,7 +156,7 @@ export function AppSidebar() {
               <ChevronUp className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-60 glass-card p-2">
+          <DropdownMenuContent align="start" className="w-60 p-2 shadow-lg border bg-popover">
             <div className="px-2 py-1.5 text-xs text-muted-foreground font-medium">
               My Account
             </div>

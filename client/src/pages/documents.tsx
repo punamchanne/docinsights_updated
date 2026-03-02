@@ -59,21 +59,21 @@ function getStatusBadge(status: string) {
   switch (status) {
     case "completed":
       return (
-        <Badge variant="secondary" className="bg-green-500/10 text-green-400 border border-green-500/20 shadow-[0_0_10px_rgba(34,197,94,0.1)]">
+        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
           <CheckCircle2 className="w-3 h-3 mr-1" />
           Completed
         </Badge>
       );
     case "processing":
       return (
-        <Badge variant="secondary" className="bg-primary/10 text-primary border border-primary/20 shadow-[0_0_10px_rgba(124,58,237,0.1)]">
+        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
           <Loader2 className="w-3 h-3 mr-1 animate-spin" />
           Processing
         </Badge>
       );
     case "error":
       return (
-        <Badge variant="destructive" className="bg-red-500/10 text-red-400 border border-red-500/20 shadow-[0_0_10px_rgba(239,68,68,0.1)]">
+        <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
           <AlertCircle className="w-3 h-3 mr-1" />
           Error
         </Badge>
@@ -252,13 +252,11 @@ function DocumentRow({
     <Link href={`/documents/${(doc as any)._id}`} className="block">
       <div
         key={(doc as any)._id}
-        className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 rounded-xl bg-background/40 border border-transparent hover:border-primary/20 hover:bg-background/60 cursor-pointer transition-all group relative overflow-hidden"
+        className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 rounded-xl bg-card border hover:border-border hover:bg-muted/50 cursor-pointer transition-all group relative overflow-hidden"
         data-testid={`document-row-${(doc as any)._id}`}
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-
-        <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform z-10 border border-primary/10">
-          <FileText className="w-6 h-6 text-primary drop-shadow-[0_0_8px_rgba(124,58,237,0.3)]" />
+        <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 z-10 border border-transparent">
+          <FileText className="w-6 h-6 text-primary" />
         </div>
 
         <div className="flex-1 min-w-0 z-10">
@@ -394,40 +392,37 @@ export default function Documents() {
   }).sort((a, b) => new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime());
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
-      {/* Decorative Background */}
-      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-primary/10 via-background to-background pointer-events-none -z-10" />
-
+    <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-glow" data-testid="text-documents-title">Documents</h1>
-          <p className="text-muted-foreground mt-1 text-lg">
+          <h1 className="text-3xl font-bold tracking-tight" data-testid="text-documents-title">Documents</h1>
+          <p className="text-muted-foreground mt-1 text-base">
             Browse and manage your uploaded documents
           </p>
         </div>
         <Link href="/upload">
-          <Button data-testid="button-upload-document" className="bg-primary hover:bg-primary/90 shadow-[0_0_15px_rgba(124,58,237,0.3)] transition-all">
+          <Button data-testid="button-upload-document" className="bg-primary hover:bg-primary/90">
             <Upload className="w-4 h-4 mr-2" />
             Upload Document
           </Button>
         </Link>
       </div>
 
-      <Card className="glass-card border-primary/10">
-        <CardHeader className="pb-4 border-b border-border/40">
+      <Card className="border shadow-sm">
+        <CardHeader className="pb-4 border-b">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1 group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Search documents..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-background/50 border-primary/10 focus:border-primary/50 transition-all"
+                className="pl-10 bg-background border-border"
                 data-testid="input-search-documents"
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-40 bg-background/50 border-primary/10 focus:border-primary/50" data-testid="select-status-filter">
+              <SelectTrigger className="w-full sm:w-40 bg-background border-border" data-testid="select-status-filter">
                 <Filter className="w-4 h-4 mr-2 text-primary" />
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -485,7 +480,7 @@ export default function Documents() {
               </p>
               {!searchQuery && statusFilter === "all" && (
                 <Link href="/upload">
-                  <Button size="lg" className="bg-primary hover:bg-primary/90 shadow-lg">
+                  <Button size="lg" className="bg-primary hover:bg-primary/90">
                     <Upload className="w-5 h-5 mr-2" />
                     Upload Document
                   </Button>
@@ -497,7 +492,7 @@ export default function Documents() {
       </Card>
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent className="glass-card border-red-500/20">
+        <AlertDialogContent className="border shadow-lg">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-red-400">Delete Document?</AlertDialogTitle>
             <AlertDialogDescription>

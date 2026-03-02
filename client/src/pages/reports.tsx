@@ -49,7 +49,7 @@ function StatCard({
   loading?: boolean;
 }) {
   return (
-    <Card>
+    <Card className="card-flat">
       <CardContent className="p-6">
         <div className="flex items-center justify-between gap-4">
           <div>
@@ -60,7 +60,7 @@ function StatCard({
               <p className="text-3xl font-bold">{value}</p>
             )}
           </div>
-          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
             <Icon className="w-6 h-6 text-primary" />
           </div>
         </div>
@@ -193,7 +193,7 @@ export default function Reports() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
-        <Card>
+        <Card className="card-flat">
           <CardHeader>
             <CardTitle className="text-lg font-medium">Documents Over Time</CardTitle>
           </CardHeader>

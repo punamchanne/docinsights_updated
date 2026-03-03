@@ -193,11 +193,11 @@ function DocumentAnalysisDialog({
                           Table {i + 1}
                         </div>
                         <div className="overflow-x-auto">
-                          <table className="w-full text-sm">
+                          <table className="w-full text-sm border-collapse">
                             <thead>
-                              <tr className="bg-muted/50">
+                              <tr className="bg-muted/50 border-b">
                                 {table.headers?.map((header, h) => (
-                                  <th key={h} className="text-left p-3 font-medium text-muted-foreground whitespace-nowrap">
+                                  <th key={h} className="text-left p-3 font-semibold text-foreground border-r last:border-r-0">
                                     {header}
                                   </th>
                                 ))}
@@ -205,9 +205,9 @@ function DocumentAnalysisDialog({
                             </thead>
                             <tbody className="divide-y">
                               {table.rows?.map((row, r) => (
-                                <tr key={r} className="hover:bg-muted/50">
+                                <tr key={r} className="hover:bg-muted/20 transition-colors border-b last:border-b-0">
                                   {row.map((cell, c) => (
-                                    <td key={c} className="p-3 whitespace-nowrap">
+                                    <td key={c} className="p-3 border-r last:border-r-0 text-muted-foreground align-top">
                                       {cell}
                                     </td>
                                   ))}

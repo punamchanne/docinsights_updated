@@ -1,5 +1,6 @@
-import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
+import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold, SchemaType } from "@google/generative-ai";
 import type { Content } from "@google/generative-ai";
+import type { ExtractedTable } from "@shared/mongo-schema";
 
 const API_KEY = process.env.GEMINI_API_KEY;
 
@@ -21,7 +22,7 @@ async function callWithRetry<T>(fn: () => Promise<T>, retries = 3, delay = 1000)
   try {
     return await fn();
   } catch (error: any) {
-    if (retries > 0 && (error.status === 429 || error.message?.includes('429'))) {
+    if (retries > 0 && (error.status === 429 || error.status === 503 || error.message?.includes('429') || error.message?.includes('503'))) {
       let waitTime = delay * 2;
 
       // Try to parse specific retry delay from Google API error
@@ -97,14 +98,20 @@ export async function generateChatResponse(
     ],
   });
 
-  const prompt = `Based on the following document content, answer the user's question.
+  const prompt = `You are a professional document analysis assistant. Your goal is to provide high-quality, meaningful, and concise answers based strictly on the provided document.
   
-  Document Content:
+  DOCUMENT CONTEXT:
   ---
-  ${documentContent.slice(0, 8000)}
+  ${documentContent.slice(0, 40000)}
   ---
 
-  User Question: "${userQuestion}"
+  INSTRUCTIONS:
+  1. Analyze the content deeply and provide a meaningful response, not just a simple summary.
+  2. If the user asks for a specific word count (e.g., "50 words abstract"), ensure the response is high-quality, covers the most important points, and stays within the limit.
+  3. Use a professional and helpful tone.
+  4. If the answer is not in the document, politely state that.
+
+  USER QUESTION: "${userQuestion}"
   `;
 
   // Use retry wrapper
@@ -121,7 +128,7 @@ export async function generateDocumentSummary(text: string): Promise<string> {
   const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
   const prompt = `Summarize the following text, focusing on the main points and key takeaways.:\n\n${text.slice(0, 12000)}`;
 
-  const result = await model.generateContent(prompt);
+  const result = await callWithRetry(() => model.generateContent(prompt));
   const response = await result.response;
   return response.text();
 }
@@ -134,8 +141,145 @@ export async function extractKeywords(text: string): Promise<string[]> {
   const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
   const prompt = `Extract the 8-12 most important keywords or key phrases from the following text. Return them as a comma-separated list:\n\n${text.slice(0, 12000)}`;
 
-  const result = await model.generateContent(prompt);
+  const result = await callWithRetry(() => model.generateContent(prompt));
   const response = await result.response;
   const keywords = response.text().split(",").map(kw => kw.trim());
   return keywords;
+}
+
+export async function extractTablesWithAI(text: string): Promise<ExtractedTable[]> {
+  if (!genAI) {
+    throw new Error("Gemini AI is not configured");
+  }
+
+  const model = genAI.getGenerativeModel({
+    model: "gemini-flash-latest",
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: SchemaType.ARRAY,
+        items: {
+          type: SchemaType.OBJECT,
+          properties: {
+            headers: {
+              type: SchemaType.ARRAY,
+              items: { type: SchemaType.STRING },
+              description: "The column headers of the table"
+            },
+            rows: {
+              type: SchemaType.ARRAY,
+              items: {
+                type: SchemaType.ARRAY,
+                items: { type: SchemaType.STRING }
+              },
+              description: "The rows of the table, each row being an array of cell values"
+            },
+            confidence: {
+              type: SchemaType.NUMBER,
+              description: "Confidence score between 0 and 1"
+            }
+          },
+          required: ["headers", "rows"]
+        }
+      }
+    }
+  });
+
+  const prompt = `Extract all tables from the following text accurately.
+  
+  IMPORTANT RULES:
+  1. ONLY extract actual tables (grid-like data). 
+  2. DO NOT include surrounding paragraphs, headers, footers, or plain text as rows/cells.
+  3. If a single table spans multiple pages, merge them into ONE continuous table.
+  4. Ensure every row has the correct number of cells corresponding to the headers.
+  5. If the text do not contain a clear table structure, return an empty array [].
+  6. Context: Do NOT split a single logical table into multiples unless the headers change.
+  
+  Text:
+  ---
+  ${text.slice(0, 30000)}
+  ---`;
+
+  try {
+    const result = await callWithRetry(() => model.generateContent(prompt));
+    const response = await result.response;
+    const tables = JSON.parse(response.text());
+    return Array.isArray(tables) ? tables : [];
+  } catch (error) {
+    console.error("Gemini Table Extraction failed:", error);
+    return [];
+  }
+}
+
+export async function analyzeImageWithGemini(imageBuffer: Buffer, mimeType: string): Promise<string> {
+  if (!genAI) {
+    throw new Error("Gemini AI is not configured");
+  }
+
+  const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+
+  const result = await callWithRetry(() => model.generateContent([
+    {
+      inlineData: {
+        data: imageBuffer.toString("base64"),
+        mimeType
+      }
+    },
+    {
+      text: "Analyze this document image. Extract all readable text content exactly as it appears. If it's a form, marksheet, or bill, preserve the structure (e.g. using tables or key-value pairs)."
+    }
+  ]));
+
+  const response = await result.response;
+  return response.text();
+}
+
+export async function analyzeStructuredDataWithGemini(text: string): Promise<any> {
+  if (!genAI) {
+    throw new Error("Gemini AI is not configured");
+  }
+
+  const model = genAI.getGenerativeModel({
+    model: "gemini-flash-latest",
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: SchemaType.OBJECT,
+        properties: {
+          documentType: { type: SchemaType.STRING },
+          summary: { type: SchemaType.STRING },
+          fields: {
+            type: SchemaType.OBJECT,
+            properties: {},
+            description: "Extracted key-value pairs specific to the document type (e.g. subjects for marksheets, line items for bills)"
+          },
+          insights: {
+            type: SchemaType.ARRAY,
+            items: { type: SchemaType.STRING }
+          }
+        },
+        required: ["documentType", "summary", "fields"]
+      }
+    }
+  });
+
+  const prompt = `Analyze the provided text and identify the document type (e.g., Marksheet, Bill, Invoice, Medical Report, Hotel Bill).
+  Extract key structured data.
+  
+  For Marksheets: Extract Name, Roll No, Subjects, Marks, and identify "Strong Areas" and "Weak Areas" based on grades.
+  For Bills (Medical/Hotel/Invoice): Extract Vendor, Date, Invoice No, Line Items (Description, Price), and Total Amount.
+  
+  Text:
+  ---
+  ${text.slice(0, 30000)}
+  ---`;
+
+  try {
+    const result = await callWithRetry(() => model.generateContent(prompt));
+    const response = await result.response;
+    return JSON.parse(response.text());
+  } catch (error) {
+    console.error("Gemini Structured Data Analysis failed:", error);
+    return null;
+  }
 }

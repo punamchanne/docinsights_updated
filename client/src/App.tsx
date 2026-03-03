@@ -80,6 +80,8 @@ function Router() {
     <AuthenticatedLayout>
       <Switch>
         <Route path="/" component={Dashboard} />
+        <Route path="/dashboard" component={Dashboard} />
+        <Route path="/auth" component={Dashboard} />
         <Route path="/upload" component={Upload} />
         <Route path="/documents" component={Documents} />
         <Route path="/documents/:id" component={DocumentViewer} />

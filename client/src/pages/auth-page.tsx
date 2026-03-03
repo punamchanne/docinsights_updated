@@ -32,7 +32,7 @@ export default function AuthPage() {
 
     useEffect(() => {
         if (user) {
-            setLocation("/dashboard");
+            setLocation("/");
         }
     }, [user, setLocation]);
 

@@ -19,11 +19,14 @@ import {
   FileText,
   Brain,
   TrendingUp,
-  FileDown
+  FileDown,
+  CheckCircle2
 } from "lucide-react";
 import type { ReportsData } from "@shared/mongo-schema";
 import { exportToPdf, exportToWord } from '@/lib/exporter';
 import { useRef } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 
 ChartJS.register(
   CategoryScale,
@@ -166,24 +169,58 @@ export default function Reports() {
     <div className="space-y-8">
       <div className="flex flex-col space-y-4 sm:flex-row sm:justify-between sm:items-start sm:space-y-0">
         <div className="flex-1 min-w-0">
-          <h1 className="text-3xl font-semibold mb-2" data-testid="text-reports-title">
+          <h1 className="text-3xl font-bold tracking-tight mb-2" data-testid="text-reports-title">
             Reports & Analytics
           </h1>
-          <p className="text-muted-foreground text-base leading-relaxed">
-            Visual insights from your processed documents
+          <p className="text-muted-foreground text-sm max-w-2xl font-medium uppercase tracking-tight">
+            Visual highlights from all your images and documents
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
-          <Button variant="outline" onClick={() => handleExport('pdf')}>
+          <Button variant="outline" size="sm" onClick={() => handleExport('pdf')}>
             <FileDown className="w-4 h-4 mr-2" />
-            Export PDF
+            PDF Export
           </Button>
-          <Button variant="outline" onClick={() => handleExport('word')}>
+          <Button variant="outline" size="sm" onClick={() => handleExport('word')}>
             <FileDown className="w-4 h-4 mr-2" />
-            Export Word
+            Word Export
           </Button>
         </div>
       </div>
+
+      {/* Quick Recap / Highlights */}
+      {!isLoading && reports && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card className="bg-primary/5 border-primary/20 shadow-none">
+            <CardContent className="p-4 flex items-center gap-4">
+              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                <Brain className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium">Top Keyword</p>
+                <p className="text-lg font-bold">
+                  {reports.topKeywords?.[0]?.keyword || "N/A"}
+                </p>
+              </div>
+              <Badge variant="outline" className="bg-background">Most used term</Badge>
+            </CardContent>
+          </Card>
+          <Card className="bg-primary/5 border-primary/20 shadow-none">
+            <CardContent className="p-4 flex items-center gap-4">
+              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                <FileText className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium">Most Active Entity</p>
+                <p className="text-lg font-bold">
+                  {reports.entityDistribution?.[0]?.name || "N/A"}
+                </p>
+              </div>
+              <Badge variant="outline" className="bg-background">Top Organization/Person</Badge>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard title="Total Documents" value={reports?.totalDocuments?.toLocaleString() ?? 0} icon={FileText} loading={isLoading} />
@@ -193,41 +230,140 @@ export default function Reports() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
-        <Card className="card-flat">
+        <Card className="card-flat border-primary/10">
           <CardHeader>
-            <CardTitle className="text-lg font-medium">Documents Over Time</CardTitle>
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-primary" />
+              Recent Activity
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">Daily upload summary.</p>
           </CardHeader>
-          <CardContent className="h-64">
-            {isLoading ? <Skeleton className="h-full w-full" /> : <Line ref={charts.documentsOverTime} options={chartOptions('Documents Over Time')} data={documentsOverTimeData} />}
+          <CardContent>
+            <div className="space-y-4">
+              {isLoading ? (
+                Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)
+              ) : reports?.documentsOverTime?.length ? (
+                reports.documentsOverTime.slice(-5).reverse().map((d) => (
+                  <div key={d.date} className="flex justify-between items-center p-3 rounded-lg bg-muted/30">
+                    <span className="font-medium">{new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                    <Badge variant="outline" className="bg-background text-primary font-bold">
+                      {d.count} {d.count === 1 ? 'Document' : 'Documents'}
+                    </Badge>
+                  </div>
+                ))
+              ) : (
+                <p className="text-muted-foreground italic">No activity yet.</p>
+              )}
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="card-flat border-primary/10">
           <CardHeader>
-            <CardTitle className="text-lg font-medium">Entity Distribution</CardTitle>
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <Brain className="w-5 h-5 text-primary" />
+              Detected Entities
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">Identifying Key People & Organizations.</p>
           </CardHeader>
-          <CardContent className="h-64">
-            {isLoading ? <Skeleton className="h-full w-full" /> : <Pie ref={charts.entityDistribution} options={chartOptions('Entity Distribution')} data={entityDistributionData} />}
+          <CardContent>
+            <div className="space-y-3">
+              {isLoading ? (
+                Array(5).fill(0).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)
+              ) : reports?.entityDistribution?.length ? (
+                reports.entityDistribution.slice(0, 6).map((e) => (
+                  <div key={e.name} className="flex items-center gap-3 p-2 border-b last:border-0">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <FileText className="w-4 h-4 text-primary" />
+                    </div>
+                    <span className="flex-1 truncate font-medium text-sm">{e.name}</span>
+                    <Badge variant="secondary" className="font-bold">{e.value}</Badge>
+                  </div>
+                ))
+              ) : (
+                <p className="text-muted-foreground italic">No entities detected yet.</p>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
-        <Card>
+        <Card className="card-flat border-primary/10">
           <CardHeader>
-            <CardTitle className="text-lg font-medium">Top Keywords</CardTitle>
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <FileDown className="w-5 h-5 text-primary" />
+              Top Keywords
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">Most important terms found by AI.</p>
           </CardHeader>
-          <CardContent className="h-64">
-            {isLoading ? <Skeleton className="h-full w-full" /> : <Bar ref={charts.topKeywords} options={{ ...chartOptions('Top Keywords'), indexAxis: 'y' as const }} data={topKeywordsData} />}
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {isLoading ? (
+                Array(10).fill(0).map((_, i) => <Skeleton key={i} className="h-8 w-20 rounded-full" />)
+              ) : reports?.topKeywords?.length ? (
+                reports.topKeywords.slice(0, 15).map((k) => (
+                  <Badge
+                    key={k.keyword}
+                    variant="secondary"
+                    className="h-10 px-4 text-sm font-medium hover:bg-primary/20 transition-colors"
+                  >
+                    {k.keyword}
+                    <span className="ml-2 py-0.5 px-1.5 rounded-full bg-primary/10 text-[10px] font-bold">
+                      {k.count}
+                    </span>
+                  </Badge>
+                ))
+              ) : (
+                <p className="text-muted-foreground italic">No keywords extracted yet.</p>
+              )}
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="card-flat border-primary/10">
           <CardHeader>
-            <CardTitle className="text-lg font-medium">Document Status</CardTitle>
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-primary" />
+              Processing Status
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">Current status of all file uploads.</p>
           </CardHeader>
-          <CardContent className="h-64">
-            {isLoading ? <Skeleton className="h-full w-full" /> : <Bar ref={charts.statusDistribution} options={chartOptions('Document Status')} data={statusDistributionData} />}
+          <CardContent>
+            <div className="space-y-6">
+              {isLoading ? (
+                Array(3).fill(0).map((_, i) => (
+                  <div key={i} className="space-y-2">
+                    <Skeleton className="h-4 w-1/4" />
+                    <Skeleton className="h-2 w-full" />
+                  </div>
+                ))
+              ) : reports?.statusDistribution?.length ? (
+                reports.statusDistribution.map((s) => {
+                  const percentage = Math.round((s.count / reports.totalDocuments) * 100);
+                  const isError = s.status === 'error';
+                  return (
+                    <div key={s.status} className="space-y-2">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="capitalize font-semibold flex items-center gap-2">
+                          <CheckCircle2 className={`w-4 h-4 ${isError ? 'text-destructive' : 'text-primary'}`} />
+                          {s.status}
+                        </span>
+                        <span className="text-muted-foreground font-medium">{s.count} docs ({percentage}%)</span>
+                      </div>
+                      <Progress
+                        value={percentage}
+                        className={`h-2 ${isError ? 'bg-destructive/10' : 'bg-primary/10'}`}
+                        //@ts-ignore
+                        indicatorClassName={isError ? 'bg-destructive' : 'bg-primary'}
+                      />
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="text-muted-foreground italic">No documents processed yet.</p>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>

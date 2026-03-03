@@ -9,6 +9,9 @@ import {
   generateDocumentSummary,
   extractKeywords,
   isGeminiConfigured,
+  extractTablesWithAI,
+  analyzeImageWithGemini,
+  analyzeStructuredDataWithGemini,
   generateChatResponse as generateGeminiChatResponse,
 } from "./gemini";
 import {
@@ -170,30 +173,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         // Validate PDF before processing (check for password/corruption)
-        try {
-          const dataBuffer = fs.readFileSync(file.path);
-          await pdf(dataBuffer);
-        } catch (error: any) {
-          // Delete file if invalid
-          if (fs.existsSync(file.path)) {
-            fs.unlinkSync(file.path);
+        const isImageFile = [".jpg", ".jpeg", ".png", ".webp"].some(ext =>
+          file.originalname.toLowerCase().endsWith(ext)
+        );
+
+        if (file.mimetype === "application/pdf" && !isImageFile) {
+          try {
+            const dataBuffer = fs.readFileSync(file.path);
+            await pdf(dataBuffer);
+          } catch (error: any) {
+            // Delete file if invalid
+            if (fs.existsSync(file.path)) {
+              fs.unlinkSync(file.path);
+            }
+
+            await storage.deleteDocument((doc as any)._id);
+
+            const isPasswordError = error?.message?.toLowerCase().includes("password") ||
+              error?.name === "PasswordException";
+
+            return res.status(400).json({
+              message: isPasswordError
+                ? "This PDF is password protected. Please remove the password and try again."
+                : "Invalid or corrupted PDF file.",
+              code: isPasswordError ? "PASSWORD_PROTECTED" : "INVALID_PDF"
+            });
           }
-
-          // Delete document record since we haven't started processing really, 
-          // but we already created it. 
-          // Actually, if we fail here, we should probably delete the document we just created
-          // to avoid "processing" stuck documents that are actually invalid.
-          await storage.deleteDocument((doc as any)._id);
-
-          const isPasswordError = error?.message?.toLowerCase().includes("password") ||
-            error?.name === "PasswordException";
-
-          return res.status(400).json({
-            message: isPasswordError
-              ? "This PDF is password protected. Please remove the password and try again."
-              : "Invalid or corrupted PDF file.",
-            code: isPasswordError ? "PASSWORD_PROTECTED" : "INVALID_PDF"
-          });
         }
 
         processDocument((doc as any)._id, file.path).catch((error) => {
@@ -555,13 +560,17 @@ async function processDocument(
     const dataBuffer = fs.readFileSync(filePath);
 
     if (isImage) {
-      console.log(`[${documentId}] Analyzing image with OpenAI...`);
+      console.log(`[${documentId}] Analyzing image with AI...`);
       await storage.updateDocument(documentId, { statusMessage: "Analyzing image with AI..." });
 
-      if (!isOpenAIConfigured()) {
-        throw new Error("OpenAI API Key is required for image processing.");
+      if (isOpenAIConfigured()) {
+        text = await analyzeImage(dataBuffer);
+      } else if (isGeminiConfigured()) {
+        const mimeType = isImage ? `image/${ext.replace(".", "") || "jpeg"}` : "application/pdf";
+        text = await analyzeImageWithGemini(dataBuffer, mimeType);
+      } else {
+        throw new Error("No AI service (OpenAI or Gemini) is configured for image processing.");
       }
-      text = await analyzeImage(dataBuffer);
       console.log(`[${documentId}] Image analysis complete.`);
       pageCount = 1;
     } else {
@@ -731,6 +740,7 @@ async function enhanceAnalysisWithAI(
   try {
     let summary = "";
     let aiKeywords: string[] = [];
+    let aiTables: any[] = [];
     let structuredData = null;
 
     if (isOpenAIConfigured()) {
@@ -743,9 +753,11 @@ async function enhanceAnalysisWithAI(
       }
     } else if (isGeminiConfigured()) {
       console.log(`[${documentId}] Using Gemini for enhanced analysis...`);
-      [summary, aiKeywords] = await Promise.all([
+      [summary, aiKeywords, aiTables, structuredData] = await Promise.all([
         generateDocumentSummary(text),
         extractKeywords(text),
+        extractTablesWithAI(text),
+        analyzeStructuredDataWithGemini(text)
       ]);
     }
 
@@ -769,6 +781,16 @@ async function enhanceAnalysisWithAI(
 
       if (structuredData) {
         analysis.structuredData = structuredData;
+      }
+
+      if (aiTables.length > 0) {
+        analysis.tables = aiTables;
+
+        // Update the specific "tables" extraction record as well
+        const tablesExtraction = await storage.getExtraction(documentId, "tables");
+        if (tablesExtraction) {
+          await storage.updateExtraction((tablesExtraction as any)._id, aiTables);
+        }
       }
 
       await storage.updateExtraction((existingExtraction as any)._id, analysis);

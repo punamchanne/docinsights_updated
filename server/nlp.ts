@@ -204,14 +204,14 @@ export function extractTablesFromText(text: string): ExtractedTable[] {
     } else if (hasMultipleSpaces) {
       cells = line.split(/\s{2,}/).map((c) => c.trim()).filter(Boolean);
     } else {
-      // For single-space separated content, split by spaces
-      cells = line.split(/\s+/).filter(Boolean);
+      // Don't split by single spaces as it creates too many false positives
+      continue;
     }
 
     // console.log(`[Table Extraction] Line ${i}: "${line}" -> ${cells.length} cells:`, cells);
 
-    // If this line has multiple cells (3+ for header), check if next lines also have cells
-    if (cells.length >= 3 && i + 1 < lines.length) {
+    // If this line has multiple cells (4+ for header to be safe), check if next lines also have cells
+    if (cells.length >= 4 && i + 1 < lines.length) {
       // console.log(`[Table Extraction] Potential table header found at line ${i}`);
       const table: ExtractedTable = {
         headers: cells,
@@ -232,13 +232,14 @@ export function extractTablesFromText(text: string): ExtractedTable[] {
         } else if (hasMultipleSpaces) {
           rowCells = nextLine.split(/\s{2,}/).map((c) => c.trim()).filter(Boolean);
         } else {
-          rowCells = nextLine.split(/\s+/).filter(Boolean);
+          // For rows, if it doesn't have multiple spaces, it's likely not part of the table anymore
+          break;
         }
 
         // console.log(`[Table Extraction] Checking row ${j}: "${nextLine}" -> ${rowCells.length} cells:`, rowCells);
 
-        // Add row if it has at least 2 cells (to match table structure)
-        if (rowCells.length >= 2) {
+        // Add row if it has at least 3 cells (to match table structure and avoid regular text)
+        if (rowCells.length >= 3) {
           table.rows.push(rowCells);
           // console.log(`[Table Extraction] Added row ${j} to table`);
         } else {

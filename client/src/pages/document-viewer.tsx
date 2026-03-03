@@ -352,9 +352,9 @@ export default function DocumentViewer() {
                           <div className="border rounded-lg overflow-hidden">
                             <Table>
                               <TableHeader>
-                                <TableRow>
+                                <TableRow className="bg-muted/50">
                                   {table.headers.map((header: string, i: number) => (
-                                    <TableHead key={i} className="font-medium">
+                                    <TableHead key={i} className="font-semibold text-foreground border-r last:border-r-0 h-10">
                                       {header}
                                     </TableHead>
                                   ))}
@@ -362,9 +362,11 @@ export default function DocumentViewer() {
                               </TableHeader>
                               <TableBody>
                                 {table.rows.map((row: string[], rowIndex: number) => (
-                                  <TableRow key={rowIndex}>
+                                  <TableRow key={rowIndex} className="border-b last:border-b-0">
                                     {row.map((cell: string, cellIndex: number) => (
-                                      <TableCell key={cellIndex}>{cell}</TableCell>
+                                      <TableCell key={cellIndex} className="border-r last:border-r-0 py-3 align-top">
+                                        {cell}
+                                      </TableCell>
                                     ))}
                                   </TableRow>
                                 ))}

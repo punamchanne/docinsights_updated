@@ -16,7 +16,6 @@ export function isGeminiConfigured(): boolean {
   return !!API_KEY && !!genAI;
 }
 
-
 // Helper for exponential backoff
 async function callWithRetry<T>(fn: () => Promise<T>, retries = 3, delay = 1000): Promise<T> {
   try {

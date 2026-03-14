@@ -225,7 +225,7 @@ export async function analyzeImageWithGemini(imageBuffer: Buffer, mimeType: stri
       }
     },
     {
-      text: "Analyze this document image. Extract all readable text content exactly as it appears. If it's a form, marksheet, or bill, preserve the structure (e.g. using tables or key-value pairs)."
+      text: "Analyze this document. Extract all readable text content exactly as it appears. If it's a form, question paper, marksheet/result, or bill, preserve the structure (e.g. using tables or key-value pairs). Do your best to extract all text as accurately as possible, as this will act as the OCR layer."
     }
   ]));
 
@@ -262,15 +262,18 @@ export async function analyzeStructuredDataWithGemini(text: string): Promise<any
     }
   });
 
-  const prompt = `Analyze the provided text and identify the document type (e.g., Marksheet, Bill, Invoice, Medical Report, Hotel Bill).
-  Extract key structured data.
+  const prompt = `Analyze the provided text and identify the document type (e.g., Question Paper, Marksheet/Result, Hospital Bill, Hotel Bill, General Invoice).
+  Extract key structured data based on the document type.
   
-  For Marksheets: Extract Name, Roll No, Subjects, Marks, and identify "Strong Areas" and "Weak Areas" based on grades.
-  For Bills (Medical/Hotel/Invoice): Extract Vendor, Date, Invoice No, Line Items (Description, Price), and Total Amount.
+  - For Question Papers: Extract Subject, Subject Code, Date/Year, Total Marks, Time Allowed, and a list of Questions (with marks if available).
+  - For Marksheets/Results: Extract Student Name, Roll No/ID, Institution, Subjects, Marks/Grades, Total Marks, Result Status (Pass/Fail), and identify "Strong Areas" and "Weak Areas" based on grades.
+  - For Hospital/Medical Bills: Extract Patient Name, Hospital Name, Date, Doctor Name, Diagnosis/Treatment, Line Items, and Total Amount.
+  - For Hotel Bills: Extract Guest Name, Hotel Name, Check-in/Check-out dates, Room Number, Line Items (Room rate, Food, etc.), and Total Amount.
+  - For General Invoices/Bills: Extract Vendor, Date, Invoice No, Line Items (Description, Price), and Total Amount.
   
   Text:
   ---
-  ${text.slice(0, 30000)}
+  ${text.substring(0, 30000)}
   ---`;
 
   try {

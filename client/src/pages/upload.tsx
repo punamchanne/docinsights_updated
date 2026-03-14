@@ -25,6 +25,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useQuery } from "@tanstack/react-query";
+import type { Document, ExtractedEntity, ExtractedTable, DocumentAnalysis } from "@shared/mongo-schema";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Building, MapPin, Calendar, Banknote, User, Lightbulb, TrendingUp, TrendingDown, FileCheck } from "lucide-react";
 
 interface UploadingFile {
   file: File;
@@ -117,12 +131,15 @@ export default function Upload() {
             ...f,
             progress: 100,
             status: "completed",
-            documentId: result.id,
+            documentId: result._id || result.id, // backend returns _id
           } : f
         ));
 
-        queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+        // Use setTimeout to ensure state is updated before invalidating queries
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+        }, 1000);
 
         toast({
           title: "Upload successful",
@@ -172,7 +189,7 @@ export default function Upload() {
           Upload Documents
         </h1>
         <p className="text-base text-muted-foreground max-w-2xl mx-auto">
-          Upload PDF or Image files to extract text, analyze content, and enable AI-powered Q&A
+          Upload PDF or Image files to extract text, analyze content, and enable smart Q&A
         </p>
       </div>
 
@@ -260,7 +277,7 @@ export default function Upload() {
                     {uploadFile.status === "processing" && (
                       <div className="flex items-center gap-2 text-xs text-primary font-medium animate-pulse">
                         <Loader2 className="w-3 h-3 animate-spin" />
-                        Processing document AI...
+                        Processing document...
                       </div>
                     )}
                     {uploadFile.status === "completed" && (
@@ -284,7 +301,7 @@ export default function Upload() {
                         className="hover:bg-primary/10 hover:text-primary transition-colors border-primary/20"
                         onClick={() => navigate(`/documents/${uploadFile.documentId}`)}
                       >
-                        View
+                        Open Full View
                       </Button>
                     )}
                     <Button
@@ -302,6 +319,18 @@ export default function Upload() {
           </CardContent>
         </Card>
       )}
+
+      {/* Render Inline Analysis for uploaded documents */}
+      {files.map((file, index) => {
+        if (file.status === "completed" && file.documentId) {
+          return (
+            <div key={`analysis-${index}`} className="mt-8 animate-in fade-in slide-in-from-bottom-4">
+              <InlineDocumentAnalysis documentId={file.documentId} />
+            </div>
+          );
+        }
+        return null;
+      })}
 
       {/* Password Protection Warning Dialog */}
       <AlertDialog open={showPasswordAlert} onOpenChange={setShowPasswordAlert}>
@@ -325,5 +354,201 @@ export default function Upload() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+// Sub-component to fetch and display the inline analysis
+function InlineDocumentAnalysis({ documentId }: { documentId: string }) {
+  const { data: document, isLoading } = useQuery<Document & { extractions?: any[], extractedText?: string }>({
+    queryKey: [`/api/documents/${documentId}/analysis`],
+    refetchInterval: (query) => {
+      // Poll every 2 seconds until it's no longer processing
+      return (query.state.data?.status === "processing" || !query.state.data) ? 2000 : false;
+    },
+    enabled: !!documentId,
+  });
+
+  console.log(`[Inline Analysis] DocID: ${documentId}, isLoading: ${isLoading}, status: ${document?.status}`);
+
+  if (isLoading || document?.status === "processing") {
+    return (
+      <Card className="border shadow-sm border-primary/20 bg-primary/5">
+        <CardContent className="p-8 text-center space-y-4">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
+          <p className="text-primary font-medium animate-pulse">DocInsight is reading and analyzing your document...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!document || document.status === "error") {
+    return null;
+  }
+
+  const analysisExtraction = document.extractions?.find(e => e.extractionType === "analysis");
+  const analysis = analysisExtraction?.data as DocumentAnalysis | undefined;
+  const tableExtraction = document.extractions?.find(e => e.extractionType === "tables");
+  const tables = (tableExtraction?.data as ExtractedTable[] | undefined) || analysis?.tables || [];
+
+  return (
+    <Card className="border shadow-lg overflow-hidden">
+      <CardHeader className="bg-muted/30 border-b pb-4">
+        <div className="flex items-center gap-2">
+          <CheckCircle2 className="w-5 h-5 text-green-500" />
+          <CardTitle className="text-lg">Extracted Data: {document.originalName}</CardTitle>
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        <Tabs defaultValue="insights" className="w-full">
+          <div className="border-b px-6 pt-4 bg-muted/10">
+            <TabsList className="bg-transparent p-0 h-auto gap-4">
+              <TabsTrigger
+                value="insights"
+                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none border-b-2 border-transparent data-[state=active]:border-primary rounded-none pb-3"
+              >
+                Key Information
+              </TabsTrigger>
+              <TabsTrigger
+                value="text"
+                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none border-b-2 border-transparent data-[state=active]:border-primary rounded-none pb-3"
+              >
+                Raw Text
+              </TabsTrigger>
+              <TabsTrigger
+                value="tables"
+                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none border-b-2 border-transparent data-[state=active]:border-primary rounded-none pb-3"
+              >
+                Tables ({tables.length})
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          <TabsContent value="insights" className="mt-0 p-6">
+            {analysis?.structuredData ? (
+              <div className="space-y-6">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="px-3 py-1 text-sm bg-primary/5 border-primary/20 text-primary">
+                    <FileCheck className="w-3 h-3 mr-2" />
+                    {analysis.structuredData.documentType || "Analyzed Document"}
+                  </Badge>
+                </div>
+
+                {analysis.structuredData.insights && analysis.structuredData.insights.length > 0 && (
+                  <div className="bg-muted/30 p-4 rounded-lg border border-border/50">
+                    <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                      <Lightbulb className="w-4 h-4 text-amber-500" />
+                      Key Insights
+                    </h4>
+                    <ul className="space-y-2">
+                      {analysis.structuredData.insights.map((insight: string, i: number) => (
+                        <li key={i} className="text-sm text-muted-foreground flex gap-2">
+                          <span className="text-primary">•</span>
+                          {insight}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {(analysis.structuredData.fields?.["Strong Areas"] || analysis.structuredData.fields?.["Weak Areas"]) && (
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    {analysis.structuredData.fields?.["Strong Areas"] && (
+                      <div className="p-4 rounded-lg bg-green-500/5 border border-green-500/10">
+                        <h4 className="text-sm font-semibold mb-2 flex items-center gap-2 text-green-700 dark:text-green-400">
+                          <TrendingUp className="w-4 h-4" /> Strong Areas
+                        </h4>
+                        <p className="text-sm text-muted-foreground">
+                          {Array.isArray(analysis.structuredData.fields["Strong Areas"]) 
+                            ? analysis.structuredData.fields["Strong Areas"].join(", ") 
+                            : analysis.structuredData.fields["Strong Areas"]}
+                        </p>
+                      </div>
+                    )}
+                    {analysis.structuredData.fields?.["Weak Areas"] && (
+                      <div className="p-4 rounded-lg bg-red-500/5 border border-red-500/10">
+                        <h4 className="text-sm font-semibold mb-2 flex items-center gap-2 text-red-700 dark:text-red-400">
+                          <TrendingDown className="w-4 h-4" /> Areas for Improvement
+                        </h4>
+                        <p className="text-sm text-muted-foreground">
+                          {Array.isArray(analysis.structuredData.fields["Weak Areas"]) 
+                            ? analysis.structuredData.fields["Weak Areas"].join(", ") 
+                            : analysis.structuredData.fields["Weak Areas"]}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {analysis.structuredData.fields && Object.keys(analysis.structuredData.fields).length > 0 && (
+                  <div className="bg-card border rounded-lg overflow-hidden">
+                    <table className="w-full text-sm">
+                      <tbody className="divide-y divide-border">
+                        {Object.entries(analysis.structuredData.fields).map(([key, value], i) => {
+                          if (key === "Strong Areas" || key === "Weak Areas" || typeof value === 'object') return null;
+                          return (
+                            <tr key={i} className="hover:bg-muted/30">
+                              <td className="p-3 font-medium text-muted-foreground w-1/3 bg-muted/10 border-r">{key.replace(/_/g, ' ')}</td>
+                              <td className="p-3 text-foreground">{String(value)}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-center py-8">No structured data found for this document types.</p>
+            )}
+          </TabsContent>
+
+          <TabsContent value="text" className="mt-0">
+            <ScrollArea className="h-[400px] p-6 bg-muted/5">
+              <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap font-mono text-sm leading-relaxed">
+                {document.extractedText || "No text extracted."}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+          
+          <TabsContent value="tables" className="mt-0">
+            <ScrollArea className="h-[400px] p-6">
+              {tables && tables.length > 0 ? (
+                <div className="space-y-6">
+                  {tables.map((table, tableIndex) => (
+                    <div key={tableIndex} className="border rounded-lg overflow-hidden">
+                      <div className="bg-muted p-2 font-medium text-xs uppercase tracking-wider text-muted-foreground">
+                        Table {tableIndex + 1}
+                      </div>
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="bg-muted/30">
+                              {table.headers.map((header: string, i: number) => (
+                                <TableHead key={i} className="border-r last:border-r-0 whitespace-nowrap">{header}</TableHead>
+                              ))}
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {table.rows.map((row: string[], rowIndex: number) => (
+                              <TableRow key={rowIndex}>
+                                {row.map((cell: string, cellIndex: number) => (
+                                  <TableCell key={cellIndex} className="border-r last:border-r-0 min-w-[120px]">{cell}</TableCell>
+                                ))}
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-center py-8">No tables detected in this document.</p>
+              )}
+            </ScrollArea>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
 }

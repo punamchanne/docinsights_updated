@@ -583,7 +583,20 @@ async function processDocument(
       text = pdfData.text || "";
       pageCount = pdfData.numpages || 1;
 
-      console.log(`[${documentId}] Text extraction complete. Length: ${text.length}`);
+      // If PDF contains very little text, it might be a scanned document. Fallback to Gemini OCR.
+      if (text.trim().length < 50 && isGeminiConfigured()) {
+        console.log(`[${documentId}] PDF appears to be scanned. Performing OCR with Gemini...`);
+        await storage.updateDocument(documentId, { statusMessage: "Performing OCR with Gemini..." });
+        try {
+          text = await analyzeImageWithGemini(dataBuffer, "application/pdf");
+          console.log(`[${documentId}] Gemini OCR extraction complete. Length: ${text.length}`);
+        } catch (error) {
+          console.error(`[${documentId}] Gemini OCR failed, proceeding with empty text:`, error);
+        }
+      } else {
+        console.log(`[${documentId}] Text extraction complete. Length: ${text.length}`);
+      }
+      
       console.log(`[${documentId}] First 100 chars: ${text.substring(0, 100).replace(/\n/g, ' ')}...`);
     }
 

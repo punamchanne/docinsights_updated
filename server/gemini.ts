@@ -5,6 +5,7 @@ import type { ExtractedTable } from "@shared/mongo-schema";
 const API_KEY = process.env.GEMINI_API_KEY;
 
 let genAI: GoogleGenerativeAI | null = null;
+const MODEL_NAME = "gemini-3.1-flash-lite";
 
 if (API_KEY) {
   genAI = new GoogleGenerativeAI(API_KEY);
@@ -60,7 +61,7 @@ export async function generateChatResponse(
     throw new Error("Gemini AI is not configured");
   }
 
-  const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+  const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
   const formattedHistory: Content[] = chatHistory.map(msg => ({
     role: msg.role === 'assistant' ? 'model' : 'user',
@@ -124,7 +125,7 @@ export async function generateDocumentSummary(text: string): Promise<string> {
     throw new Error("Gemini AI is not configured");
   }
 
-  const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+  const model = genAI.getGenerativeModel({ model: MODEL_NAME });
   const prompt = `Summarize the following text, focusing on the main points and key takeaways.:\n\n${text.slice(0, 12000)}`;
 
   const result = await callWithRetry(() => model.generateContent(prompt));
@@ -137,7 +138,7 @@ export async function extractKeywords(text: string): Promise<string[]> {
     throw new Error("Gemini AI is not configured");
   }
 
-  const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+  const model = genAI.getGenerativeModel({ model: MODEL_NAME });
   const prompt = `Extract the 8-12 most important keywords or key phrases from the following text. Return them as a comma-separated list:\n\n${text.slice(0, 12000)}`;
 
   const result = await callWithRetry(() => model.generateContent(prompt));
@@ -152,7 +153,7 @@ export async function extractTablesWithAI(text: string): Promise<ExtractedTable[
   }
 
   const model = genAI.getGenerativeModel({
-    model: "gemini-flash-latest",
+    model: MODEL_NAME,
     generationConfig: {
       responseMimeType: "application/json",
       responseSchema: {
@@ -215,7 +216,7 @@ export async function analyzeImageWithGemini(imageBuffer: Buffer, mimeType: stri
     throw new Error("Gemini AI is not configured");
   }
 
-  const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+  const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
   const result = await callWithRetry(() => model.generateContent([
     {
@@ -239,7 +240,7 @@ export async function analyzeStructuredDataWithGemini(text: string): Promise<any
   }
 
   const model = genAI.getGenerativeModel({
-    model: "gemini-flash-latest",
+    model: MODEL_NAME,
     generationConfig: {
       responseMimeType: "application/json",
       responseSchema: {

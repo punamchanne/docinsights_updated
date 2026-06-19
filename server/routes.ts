@@ -622,7 +622,7 @@ async function processDocument(
         console.error(`[${documentId}] Error in extractKeywordsFromText`, e);
         return [];
       }),
-      Promise.resolve(extractTablesFromText(text)).catch((e) => {
+      Promise.resolve(isGeminiConfigured() ? [] : extractTablesFromText(text)).catch((e) => {
         console.error(`[${documentId}] Error in extractTablesFromText`, e);
         return [];
       }),
@@ -796,7 +796,7 @@ async function enhanceAnalysisWithAI(
         analysis.structuredData = structuredData;
       }
 
-      if (aiTables.length > 0) {
+      if (isGeminiConfigured() || aiTables.length > 0) {
         analysis.tables = aiTables;
 
         // Update the specific "tables" extraction record as well

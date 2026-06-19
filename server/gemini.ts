@@ -263,7 +263,7 @@ export async function analyzeStructuredDataWithGemini(text: string): Promise<any
     }
   });
 
-  const prompt = `Analyze the provided text and identify the document type (e.g., Question Paper, Marksheet/Result, Hospital Bill, Hotel Bill, General Invoice).
+  const prompt = `Analyze the provided text and identify the document type (e.g., Question Paper, Marksheet/Result, Hospital Bill, Hotel Bill, General Invoice, Research Paper/Academic Article).
   Extract key structured data based on the document type.
   
   - For Question Papers: Extract Subject, Subject Code, Date/Year, Total Marks, Time Allowed, and a list of Questions (with marks if available).
@@ -271,6 +271,7 @@ export async function analyzeStructuredDataWithGemini(text: string): Promise<any
   - For Hospital/Medical Bills: Extract Patient Name, Hospital Name, Date, Doctor Name, Diagnosis/Treatment, Line Items, and Total Amount.
   - For Hotel Bills: Extract Guest Name, Hotel Name, Check-in/Check-out dates, Room Number, Line Items (Room rate, Food, etc.), and Total Amount.
   - For General Invoices/Bills: Extract Vendor, Date, Invoice No, Line Items (Description, Price), and Total Amount.
+  - For Research Papers/Academic Articles/Review Papers: Extract Title, Authors, Institution/Affiliation, Publication Date/Year, Domain, and Key Findings.
   
   Text:
   ---
